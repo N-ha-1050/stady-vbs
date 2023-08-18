@@ -158,92 +158,95 @@ loop
 
 csv.Close
 
-dim recordcsvpath
-recordcsvpath = inipath & ".csv"
+if record = 1 then
 
-if not(so.fileexists(recordcsvpath)) then
+    dim recordcsvpath
+    recordcsvpath = inipath & ".csv"
 
-    dim recordnewcsv
-    set recordnewcsv = so.createtextfile(recordcsvpath)
+    if not(so.fileexists(recordcsvpath)) then
 
-    recordnewcsv.writeline("Memories Question Data")
-    ' recordnewcsv.writeline(q)
-    recordnewcsv.writeline("問題, 正答, 出題総数, 正解回数, 誤答")
+        dim recordnewcsv
+        set recordnewcsv = so.createtextfile(recordcsvpath)
 
-    dim j
-    for j = 1 to linenum - 1
-        recordnewcsv.writeline(data(j, q) & ", " & data(j, a) & ", 0, 0, ")
-    next
+        recordnewcsv.writeline("Memories Question Data")
+        ' recordnewcsv.writeline(q)
+        recordnewcsv.writeline("問題, 正答, 出題総数, 正解回数, 誤答")
 
-    recordnewcsv.close
+        dim j
+        for j = 1 to linenum - 1
+            recordnewcsv.writeline(data(j, q) & ", " & data(j, a) & ", 0, 0, ")
+        next
 
-    dim recordnewcsvfile
-    set recordnewcsvfile = so.getfile(recordcsvpath)
-    recordnewcsvfile.attributes = 2
+        recordnewcsv.close
 
-    msgbox("記録データを新規作成しました。")
-end if
+        dim recordnewcsvfile
+        set recordnewcsvfile = so.getfile(recordcsvpath)
+        recordnewcsvfile.attributes = 2
 
-dim recordcsv
-set recordcsv = so.OpenTextFile(recordcsvpath)
-
-dim DataQuestion(), DataAnswer(), DataAll(), DataRight(), DataWrong()
-redim DataQuestion(linenum - 1), DataAnswer(linenum - 1), DataAll(linenum - 1), DataRight(linenum - 1), DataWrong(linenum - 1)
-
-dim dff
-dff = ucase(trim(recordcsv.readline))
-
-if not(dff = "MEMORIES QUESTION DATA") then
-
-    recordcsv.close
-
-    dim dffdel
-    dffdel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
-
-    if dffdel = 6 then
-        so.deletefile(recordcsvpath)
+        msgbox("記録データを新規作成しました。")
     end if
 
-    wscript.quit
-end if
+    dim recordcsv
+    set recordcsv = so.OpenTextFile(recordcsvpath)
 
-dim recordcnt
-recordcnt = 0
+    dim DataQuestion(), DataAnswer(), DataAll(), DataRight(), DataWrong()
+    redim DataQuestion(linenum - 1), DataAnswer(linenum - 1), DataAll(linenum - 1), DataRight(linenum - 1), DataWrong(linenum - 1)
 
-do until recordcsv.AtEndOfStream
+    dim dff
+    dff = ucase(trim(recordcsv.readline))
 
-    dim recordcsvread
-    recordcsvread = recordcsv.readline
+    if not(dff = "MEMORIES QUESTION DATA") then
 
-    if not(recordcsvread = "") then
+        recordcsv.close
 
-        dim recordcsvdata
-        recordcsvdata = split(recordcsvread, ",")
+        dim dffdel
+        dffdel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
 
-        DataQuestion(recordcnt) = trim(recordcsvdata(0))
-        DataAnswer(recordcnt) = trim(recordcsvdata(1))
-        DataAll(recordcnt) = trim(recordcsvdata(2))
-        DataRight(recordcnt) = trim(recordcsvdata(3))
-        DataWrong(recordcnt) = trim(recordcsvdata(4))
-
-        if recordcnt > 0 and not(DataQuestion(recordcnt) = data(recordcnt, q) and DataAnswer(recordcnt) = data(recordcnt, a)) then
-
-            recordcsv.close
-        
-            dim linedel
-            linedel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
-        
-            if linedel = 6 then
-                so.deletefile(recordcsvpath)
-            end if
-        
-            wscript.quit
+        if dffdel = 6 then
+            so.deletefile(recordcsvpath)
         end if
 
-        recordcnt = recordcnt + 1
+        wscript.quit
     end if
-loop
-recordcsv.close
+
+    dim recordcnt
+    recordcnt = 0
+
+    do until recordcsv.AtEndOfStream
+
+        dim recordcsvread
+        recordcsvread = recordcsv.readline
+
+        if not(recordcsvread = "") then
+
+            dim recordcsvdata
+            recordcsvdata = split(recordcsvread, ",")
+
+            DataQuestion(recordcnt) = trim(recordcsvdata(0))
+            DataAnswer(recordcnt) = trim(recordcsvdata(1))
+            DataAll(recordcnt) = trim(recordcsvdata(2))
+            DataRight(recordcnt) = trim(recordcsvdata(3))
+            DataWrong(recordcnt) = trim(recordcsvdata(4))
+
+            if recordcnt > 0 and not(DataQuestion(recordcnt) = data(recordcnt, q) and DataAnswer(recordcnt) = data(recordcnt, a)) then
+
+                recordcsv.close
+            
+                dim linedel
+                linedel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
+            
+                if linedel = 6 then
+                    so.deletefile(recordcsvpath)
+                end if
+            
+                wscript.quit
+            end if
+
+            recordcnt = recordcnt + 1
+        end if
+    loop
+    recordcsv.close
+end if
 
 do
     dim num
@@ -254,44 +257,51 @@ do
     
     if isempty(ans) then
 
-        dim recordwritecsv
-        set recordwritecsv = so.OpenTextFile(recordcsvpath, 2)
-        
-        recordwritecsv.writeline("Memories Question Data")
-        recordwritecsv.writeline("問題, 正答, 出題総数, 正解回数, 誤答")
+        if record = 1 then
 
-        dim k
-        for k = 1 to linenum - 1
+            dim recordwritecsv
+            set recordwritecsv = so.OpenTextFile(recordcsvpath, 2)
             
+            recordwritecsv.writeline("Memories Question Data")
+            recordwritecsv.writeline("問題, 正答, 出題総数, 正解回数, 誤答")
 
-            if not(DataQuestion(k) = data(k, q) and DataAnswer(k) = data(k, a)) then
+            dim k
+            for k = 1 to linenum - 1
+                
 
-                recordwritecsv.close
-            
-                dim writedel
-                writedel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
-            
-                if writedel = 6 then
-                    so.deletefile(recordcsvpath)
+                if not(DataQuestion(k) = data(k, q) and DataAnswer(k) = data(k, a)) then
+
+                    recordwritecsv.close
+                
+                    dim writedel
+                    writedel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
+                
+                    if writedel = 6 then
+                        so.deletefile(recordcsvpath)
+                    end if
+                
+                    wscript.quit
                 end if
-            
-                wscript.quit
-            end if
-            recordwritecsv.writeline(DataQuestion(k) & ", " & DataAnswer(k) & ", " & DataAll(k) & ", " & DataRight(k) & ", " & DataWrong(k))
-        next
+                recordwritecsv.writeline(DataQuestion(k) & ", " & DataAnswer(k) & ", " & DataAll(k) & ", " & DataRight(k) & ", " & DataWrong(k))
+            next
 
-        recordwritecsv.close
+            recordwritecsv.close
 
-        msgbox("セーブしました。")
+            msgbox("セーブしました。")
+        end if
         wscript.quit
     
     elseif ans = data(num, a) then
-        DataAll(num) = int(DataAll(num)) + 1
-        DataRight(num) = int(DataRight(num)) + 1
+        if record = 1 then
+            DataAll(num) = int(DataAll(num)) + 1
+            DataRight(num) = int(DataRight(num)) + 1
+        end if
 
     else
-        DataAll(num) = int(DataAll(num)) + 1
-        DataWrong(num) = DataWrong(num) & ans & "; "
+        if record = 1 then
+            DataAll(num) = int(DataAll(num)) + 1
+            DataWrong(num) = DataWrong(num) & ans & "; "
+        end if
         msgbox("不正解です。" & vbcrlf & "問題：" & data(num, q) & vbcrlf & "誤答: " & ans & vbcrlf & "正答: " & data(num, a))
     end if
 loop
