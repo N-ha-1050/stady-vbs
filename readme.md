@@ -3,7 +3,7 @@
 追記(2023-08-18)
 
 * 2019年(当時中学3年)のときに作ったものを発掘したのでアップロード+リメイク
-* `original.vbs` と `readme.txt` は当時のまま(タイムスタンプは `2019-11-18`だった)
+* `original.vbs` と `readme.txt` は当時のまま(タイムスタンプは `2019-11-18` だった)
 * このファイルは `readme.txt` を markdown に直したもの
 * vbs はプログラミングを始めたきっかけだったので動いて感動(後に、webアプリ版と[Streamlit版](https://github.com/N-ha-1050/stady-streamlit)を作成)
 

@@ -1,223 +1,297 @@
-'自動ファイル読み込み・記録機能対応用
-Option Explicit
-Dim txt,readtxt,txtent,ini,iniread,csvpath,so,dn,dnn,di,wa,dw,io,coun,gi,dread,dff,sa,cv,cou,iw,iwi,datacsvpath,inipath,gf,data,fileselctmsg,fil,f,i,count,cvread,line,cv2,Qmsg,Q,Amsg,A,msg,num,ans,i1,i2,i3,c,csv(),dsplit,DataQue(),DataAns(),DataAll(),DataRig(),DataNot(),testi,testmsg
-Randomize
-Set so = CreateObject("Scripting.FileSystemObject")
-Set sa = WScript.CreateObject("Shell.Application")
-Set wa = WScript.Arguments
+' リメイク 2023-8-18
 
-If wa.Count = 1 Then
+option explicit
+randomize
 
-    Set txt = so.OpenTextFile(wa(0))
+
+dim so, sa, ws, wa
+set so = CreateObject("Scripting.FileSystemObject")
+set sa = WScript.CreateObject("Shell.Application")
+set ws = CreateObject("WScript.Shell")
+set wa = WScript.Arguments
+
+
+dim inipath, csvpath, q, a, msg, record
+
+if wa.Count = 1 then
 
     inipath = wa(0)
 
-    Do Until txt.AtEndOfStream
-    readtxt = txt.ReadLine
+    dim inifile
+    set inifile = so.getfile(inipath)
 
-    If Not(trim(readtxt)="") Then
-        If Not(Mid(trim(readtxt),1,1)="#") Then
-            if Ucase(Trim(readtxt)) = "[" then
-                sec = Ucase(Trim(readtxt))
-            else
-                txtent = Split(readtxt,"=")
-                if ( Ubound(txtent) = 1 ) then
-                    if Ucase(Trim(txtent(0)))="CSV" then
-                        csvpath = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="Q" then
-                        Q = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="A" then
-                        A = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="MSG" then
-                        msg = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="DATA" then
-                        data = txtent(1)
-                    end if
-                end if
-            end if
-        end if
-    end if
+    ws.CurrentDirectory = inifile.parentfolder
 
-    Loop
+else
 
-    txt.close
-
-Else
-
+    dim gf
     set gf = so.getfolder(".")
 
-    Dim file()
-    cou = 0
-    For Each c In gf.Files
-    Set ini = so.OpenTextFile(c.name,1)
-    do
-    iniread = ini.readline
-    loop while iniread = ""
-    if Ucase(Trim(iniread)) = "[MEMORIES QUESTION]" then
-    cou = cou + 1
-    fileselctmsg = fileselctmsg & cou & "." & c.Name & vbCrLf
-    ReDim Preserve file(cou)
-    file(cou) = c.name
-    End If
-    Next
-    ini.close
-    fil = inputbox("設定ファイルを選択してください。" & vbCrLf & fileselctmsg)
-    If fil = "" Then
-    Wscript.Quit
+    dim fileselectcnt
+    fileselectcnt = 0
+
+    dim filepath, fileselectmsg, inifiles()
+    for each filepath in gf.files
+
+        dim file
+        set file = so.OpenTextFile(filepath)
+        
+        do until file.AtEndOfStream
+
+            dim fileread
+            fileread = file.readline
+
+            if ucase(trim(fileread)) = "[MEMORIES QUESTION]" then
+                fileselectcnt = fileselectcnt + 1
+                fileselectmsg = fileselectmsg & fileselectcnt & ". " & so.getbasename(filepath) & vbcrlf
+
+                redim Preserve inifiles(fileselectcnt)
+                inifiles(fileselectcnt) = filepath
+            end if
+        loop
+        file.close
+    next
+
+    dim ininum
+    ininum = inputbox("設定ファイルを選択してください。" & vbcrlf & fileselectmsg, , 1)
+
+    if ininum = "" then
+        Wscript.Quit
     end if
 
-    inipath = file(fil)
+    inipath = inifiles(ininum)
 
-    Set txt = so.OpenTextFile(file(fil),1)
+end if
 
-    Do Until txt.AtEndOfStream
-    readtxt = txt.ReadLine
+dim ini
+set ini = so.OpenTextFile(inipath)
 
-    If Not(trim(readtxt)="") Then
-        If Not(Mid(trim(readtxt),1,1)="#") Then
-            if Ucase(Trim(readtxt)) = "[" then
-                sec = Ucase(Trim(readtxt))
-            else
-                txtent = Split(readtxt,"=")
-                if ( Ubound(txtent) = 1 ) then
-                    if Ucase(Trim(txtent(0)))="CSV" then
-                        csvpath = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="Q" then
-                        Q = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="A" then
-                        A = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="MSG" then
-                        msg = txtent(1)
-                    end if
-                    if Ucase(Trim(txtent(0)))="DATA" then
-                        data = txtent(1)
-                    end if
-                end if
+dim sec
+sec = ""
+
+do until ini.AtEndOfStream
+
+    dim iniread
+    iniread = ini.readline
+
+    if not(trim(iniread) = "") and not(mid(trim(iniread), 1, 1) = "#") then
+
+        if mid(trim(iniread), 1, 1) = "[" then
+            sec = ucase(trim(iniread))
+
+        elseif sec = "[MEMORIES QUESTION]" then
+
+            dim inient
+            inient = split(iniread, "=")
+
+            if ubound(inient) = 1 then
+                select case ucase(trim(inient(0)))
+
+                    case "CSV"
+                        csvpath = trim(inient(1))
+                    case "Q"
+                        q = trim(inient(1))
+                    case "A"
+                        a = trim(inient(1))
+                    case "MSG"
+                        msg = trim(inient(1))
+                    case "DATA"
+                        record = trim(inient(1))
+                    case "RECORD"
+                        record = trim(inient(1))
+
+
+                end select
             end if
         end if
     end if
+loop
 
-    Loop
+ini.close
 
-End If
-txt.close
+dim linecsv
+set linecsv = so.OpenTextFile(csvpath)
 
-Set cv2 = so.OpenTextFile(csvpath,8)
-line = cv2.line
-cv2.close
+dim linenum
+linenum = 0
 
-Set cv = so.OpenTextFile(csvpath)
+do until linecsv.AtEndOfStream
 
-count = 0
-Do Until cv.AtEndOfStream
-    cvread=cv.ReadLine
-    If Not(cvread = "") then
-        If Not(Mid(trim(cvread),1,2)="//") Then
-            c = Split(cvread, ",")
-            ReDim Preserve csv(line,UBound(c))
-            for i = 0 to UBound(c)
-                csv(count,i)=c(i)
-            next
+    dim linecsvread
+    linecsvread = linecsv.readline
 
-            count = count+1
-        End If
-    End If
-Loop
-cv.Close
+    if not(trim(linecsvread) = "") and not(mid(trim(linecsvread), 1, 1) = "#") and not(mid(trim(linecsvread), 1, 2) = "//") then
+        linenum = linenum + 1
+    end if
+loop
 
+linecsv.close
 
-datacsvpath=inipath&".csv"
-Set dn = so.OpenTextFile(datacsvpath,1,true)
-dn.close
+dim csv
+set csv = so.OpenTextFile(csvpath)
 
-Set gi = so.GetFile(inipath&".csv")
-gi.attributes = 2
-If FormatNumber(gi.Size, 0) = 0 then
-    Set dnn = so.OpenTextFile(datacsvpath,2)
-    dnn.writeline("new file")
-    dnn.close
-    msgbox "記録データを新規作成しました。"
-End If
+dim data()
 
+dim cnt
+cnt = 0
 
-Set io = so.OpenTextFile(datacsvpath,1,true)
-dff = Ucase(Trim(io.ReadLine))
-io.close
-If Not(dff = "MEMORIES QUESTION DATA") Then
+do until csv.AtEndOfStream
 
-    Set so = WScript.CreateObject("Scripting.FileSystemObject")
+    dim csvread
+    csvread = csv.readline
 
-    Set iw = so.OpenTextFile(datacsvpath,2)
-    iw.WriteLine("Memories Question Data")
-    iw.WriteLine("問題,正答,出題総数,正解回数,誤答")
-    for iwi = 1 to count
-        iw.WriteLine(csv(iwi,Q)&","&csv(iwi,A)&",0,0,")
-    next
-    iw.close
-End If
-Set io = so.OpenTextFile(datacsvpath)
-dff = Ucase(Trim(io.ReadLine))
+    if not(trim(csvread) = "") and not(mid(trim(csvread), 1, 1) = "#") and not(mid(trim(csvread), 1, 2) = "//") then
+        
+        dim readdata
+        readdata = split(csvread, ",")
 
-coun=0
-Do Until io.AtEndOfStream
-    dread = io.readline
-    If Not(dread = "") then
-        ReDim Preserve DataQue(coun)
-        ReDim Preserve DataAns(coun)
-        ReDim Preserve DataAll(coun)
-        ReDim Preserve DataRig(coun)
-        ReDim Preserve DataNot(coun)
-        dsplit = Split(dread, ",")
-        DataQue(coun)=dsplit(0)
-        DataAns(coun)=dsplit(1)
-        DataAll(coun)=dsplit(2)
-        DataRig(coun)=dsplit(3)
-        DataNot(coun)=dsplit(4)
+        redim Preserve data(linenum - 1, ubound(readdata))
 
-        coun=coun+1
-    end If
-Loop
-
-
-
-io.close
-
-
-
-Do
-    num = Int(Rnd * (count-1))+1
-    ans = InputBox(msg&vbcrlf&csv(num,Q))
-    If Not(DataQue(num)=csv(num,Q)) or Not(DataAns(num)=csv(num,A)) Then
-    msgbox "dataファイルが破損しています。" & vbcrlf & DataQue(num)&"="&csv(num,Q)&vbcrlf&DataAns(num)&"="&csv(num,A)
-    WScript.Quit
-
-
-    End If
-    If IsEmpty(ans) Then
-        Set dw = so.OpenTextFile(datacsvpath,2)
-        dw.WriteLine("Memories Question Data")
-        for di = 0 to UBound(DataQue)
-            dw.WriteLine(DataQue(di)&","&DataAns(di)&","&DataAll(di)&","&DataRig(di)&","&DataNot(di))
+        dim i
+        for i = 0 to ubound(readdata)
+            data(cnt, i) = trim(readdata(i))
         next
-        dw.close
-        msgbox "セーブしました。"
-        WScript.Quit
-    ElseIf ans = csv(num,A) Then
-        DataAll(num)=Int(DataAll(num))+1
-        DataRig(num)=Int(DataRig(num))+1
-        'MsgBox "正解です。"&vbcrlf&csv(num,Q)&"=>"&csv(num,A)
-    Else
-        DataAll(num)=Int(DataAll(num))+1
-        'DataNot(num)=DataNot(num) & space(1) & ans
-        DataNot(num)=DataNot(num) & "'" & ans & "'"
 
-        MsgBox "不正解です。"&vbcrlf&"問："&csv(num,Q)&vbcrlf&"誤："&ans&vbcrlf&"正："&csv(num,A)
-    End If
-Loop
+        cnt = cnt + 1
+    end if
+loop
+
+csv.Close
+
+dim recordcsvpath
+recordcsvpath = inipath & ".csv"
+
+if not(so.fileexists(recordcsvpath)) then
+
+    dim recordnewcsv
+    set recordnewcsv = so.createtextfile(recordcsvpath)
+
+    recordnewcsv.writeline("Memories Question Data")
+    ' recordnewcsv.writeline(q)
+    recordnewcsv.writeline("問題, 正答, 出題総数, 正解回数, 誤答")
+
+    dim j
+    for j = 1 to linenum - 1
+        recordnewcsv.writeline(data(j, q) & ", " & data(j, a) & ", 0, 0, ")
+    next
+
+    recordnewcsv.close
+
+    dim recordnewcsvfile
+    set recordnewcsvfile = so.getfile(recordcsvpath)
+    recordnewcsvfile.attributes = 2
+
+    msgbox("記録データを新規作成しました。")
+end if
+
+dim recordcsv
+set recordcsv = so.OpenTextFile(recordcsvpath)
+
+dim DataQuestion(), DataAnswer(), DataAll(), DataRight(), DataWrong()
+redim DataQuestion(linenum - 1), DataAnswer(linenum - 1), DataAll(linenum - 1), DataRight(linenum - 1), DataWrong(linenum - 1)
+
+dim dff
+dff = ucase(trim(recordcsv.readline))
+
+if not(dff = "MEMORIES QUESTION DATA") then
+
+    recordcsv.close
+
+    dim dffdel
+    dffdel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
+
+    if dffdel = 6 then
+        so.deletefile(recordcsvpath)
+    end if
+
+    wscript.quit
+end if
+
+dim recordcnt
+recordcnt = 0
+
+do until recordcsv.AtEndOfStream
+
+    dim recordcsvread
+    recordcsvread = recordcsv.readline
+
+    if not(recordcsvread = "") then
+
+        dim recordcsvdata
+        recordcsvdata = split(recordcsvread, ",")
+
+        DataQuestion(recordcnt) = trim(recordcsvdata(0))
+        DataAnswer(recordcnt) = trim(recordcsvdata(1))
+        DataAll(recordcnt) = trim(recordcsvdata(2))
+        DataRight(recordcnt) = trim(recordcsvdata(3))
+        DataWrong(recordcnt) = trim(recordcsvdata(4))
+
+        if recordcnt > 0 and not(DataQuestion(recordcnt) = data(recordcnt, q) and DataAnswer(recordcnt) = data(recordcnt, a)) then
+
+            recordcsv.close
+        
+            dim linedel
+            linedel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
+        
+            if linedel = 6 then
+                so.deletefile(recordcsvpath)
+            end if
+        
+            wscript.quit
+        end if
+
+        recordcnt = recordcnt + 1
+    end if
+loop
+recordcsv.close
+
+do
+    dim num
+    num = int(rnd * (linenum - 1)) + 1
+
+    dim ans
+    ans = inputbox(msg & vbcrlf & data(num, q))
+    
+    if isempty(ans) then
+
+        dim recordwritecsv
+        set recordwritecsv = so.OpenTextFile(recordcsvpath, 2)
+        
+        recordwritecsv.writeline("Memories Question Data")
+        recordwritecsv.writeline("問題, 正答, 出題総数, 正解回数, 誤答")
+
+        dim k
+        for k = 1 to linenum - 1
+            
+
+            if not(DataQuestion(k) = data(k, q) and DataAnswer(k) = data(k, a)) then
+
+                recordwritecsv.close
+            
+                dim writedel
+                writedel = msgbox("dataファイルが破損しています。" & vbcrlf & "data ファイルを削除しますか？", 276)
+            
+                if writedel = 6 then
+                    so.deletefile(recordcsvpath)
+                end if
+            
+                wscript.quit
+            end if
+            recordwritecsv.writeline(DataQuestion(k) & ", " & DataAnswer(k) & ", " & DataAll(k) & ", " & DataRight(k) & ", " & DataWrong(k))
+        next
+
+        recordwritecsv.close
+
+        msgbox("セーブしました。")
+        wscript.quit
+    
+    elseif ans = data(num, a) then
+        DataAll(num) = int(DataAll(num)) + 1
+        DataRight(num) = int(DataRight(num)) + 1
+
+    else
+        DataAll(num) = int(DataAll(num)) + 1
+        DataWrong(num) = DataWrong(num) & ans & "; "
+        msgbox("不正解です。" & vbcrlf & "問題：" & data(num, q) & vbcrlf & "誤答: " & ans & vbcrlf & "正答: " & data(num, a))
+    end if
+loop
